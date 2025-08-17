@@ -97,10 +97,9 @@ export default function IncidentForm() {
                 <FormControl>
                   <div className="relative">
                     <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none">
-                      INC-
+                      INC
                     </div>
                     <Input 
-                      placeholder="0001234567"
                       className="pl-12"
                       maxLength={10}
                       {...field} 

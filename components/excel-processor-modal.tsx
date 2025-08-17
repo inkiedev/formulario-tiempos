@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Download, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -21,16 +22,26 @@ export default function ExcelProcessorModal() {
   const [processedData, setProcessedData] = useState<ExcelRow[] | null>(null);
   const [matchesFound, setMatchesFound] = useState<number>(0);
   const [totalRows, setTotalRows] = useState<number>(0);
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
 
-  const getCurrentMonthIncidents = (incidents: IncidenteWithDuration[]) => {
-    const currentDate = new Date();
-    const currentMonth = currentDate.getMonth();
-    const currentYear = currentDate.getFullYear();
+  const getIncidentsByMonth = (incidents: IncidenteWithDuration[], monthYear: string) => {
+    if (!monthYear) {
+      const currentDate = new Date();
+      const currentMonth = currentDate.getMonth();
+      const currentYear = currentDate.getFullYear();
+      
+      return incidents.filter(incident => {
+        const incidentDate = new Date(incident.fecha_incidencia);
+        return incidentDate.getMonth() === currentMonth && 
+               incidentDate.getFullYear() === currentYear;
+      });
+    }
 
+    const [year, month] = monthYear.split('-').map(Number);
     return incidents.filter(incident => {
       const incidentDate = new Date(incident.fecha_incidencia);
-      return incidentDate.getMonth() === currentMonth && 
-             incidentDate.getFullYear() === currentYear;
+      return incidentDate.getMonth() === (month - 1) && 
+             incidentDate.getFullYear() === year;
     });
   };
 
@@ -63,9 +74,9 @@ export default function ExcelProcessorModal() {
       const worksheet = workbook.Sheets[sheetName];
       const data: ExcelRow[] = XLSX.utils.sheet_to_json(worksheet);
 
-      // Obtener incidentes del mes actual
+      // Obtener incidentes del mes seleccionado
       const allIncidents = await incidentesService.getAll();
-      const currentMonthIncidents = getCurrentMonthIncidents(allIncidents);
+      const monthIncidents = getIncidentsByMonth(allIncidents, selectedMonth);
 
       // Procesar datos y agregar columnas
       let matchesFound = 0;
@@ -95,7 +106,7 @@ export default function ExcelProcessorModal() {
             }
           }
         }
-        const matchedIncident = incidentId ? findIncidentById(currentMonthIncidents, incidentId) : null;
+        const matchedIncident = incidentId ? findIncidentById(monthIncidents, incidentId) : null;
 
         const newRow: ExcelRow = { ...row };
         
@@ -180,6 +191,7 @@ export default function ExcelProcessorModal() {
     setProcessing(false);
     setMatchesFound(0);
     setTotalRows(0);
+    setSelectedMonth("");
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,6 +207,34 @@ export default function ExcelProcessorModal() {
       }
     }
   };
+
+  // Generar opciones de meses para el año actual y anterior
+  const generateMonthOptions = () => {
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const options = [];
+
+    // Año actual
+    for (let month = 0; month < 12; month++) {
+      const date = new Date(currentYear, month, 1);
+      const monthValue = `${currentYear}-${String(month + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+      options.push({ value: monthValue, label: monthLabel });
+    }
+
+    // Año anterior
+    const previousYear = currentYear - 1;
+    for (let month = 0; month < 12; month++) {
+      const date = new Date(previousYear, month, 1);
+      const monthValue = `${previousYear}-${String(month + 1).padStart(2, '0')}`;
+      const monthLabel = date.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' });
+      options.unshift({ value: monthValue, label: monthLabel });
+    }
+
+    return options;
+  };
+
+  const monthOptions = generateMonthOptions();
 
   return (
     <Dialog open={open} onOpenChange={(newOpen) => {
@@ -215,7 +255,23 @@ export default function ExcelProcessorModal() {
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
             Sube un archivo Excel con columnas de incidentes. Se agregarán las columnas &#34;Duracion Calculada&#34; y
-            &#34;Observaciones&#34; basadas en los incidentes del mes actual.
+            &#34;Observaciones&#34; basadas en los incidentes del mes seleccionado.
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="month-select">Mes de comparación</Label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar mes (por defecto: mes actual)" />
+              </SelectTrigger>
+              <SelectContent>
+                {monthOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">
