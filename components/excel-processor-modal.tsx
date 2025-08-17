@@ -214,8 +214,8 @@ export default function ExcelProcessorModal() {
         
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Sube un archivo Excel con columnas de incidentes. Se agregarán las columnas &#34;duración&#34; y &#34;causa&#34;
-            basadas en los incidentes del mes actual.
+            Sube un archivo Excel con columnas de incidentes. Se agregarán las columnas &#34;Duracion Calculada&#34; y
+            &#34;Observaciones&#34; basadas en los incidentes del mes actual.
           </div>
 
           <div className="space-y-2">
