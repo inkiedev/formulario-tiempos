@@ -11,6 +11,7 @@ export interface CreateIncidenteData {
   fechaIncidencia: string;
   atr: string;
   alimentadorNormal: string;
+  usuarioAsignado: string;
   observaciones: string;
 }
 
@@ -35,6 +36,7 @@ export const incidentesService = {
       fecha_incidencia: data.fechaIncidencia,
       atr: data.atr,
       alimentador_normal: data.alimentadorNormal,
+      usuario_asignado: `qas/05-${data.usuarioAsignado}`,
       observaciones: data.observaciones,
     };
 
@@ -92,6 +94,7 @@ export const incidentesService = {
     if (updates.fechaIncidencia) updateData.fecha_incidencia = updates.fechaIncidencia;
     if (updates.atr) updateData.atr = updates.atr;
     if (updates.alimentadorNormal) updateData.alimentador_normal = updates.alimentadorNormal;
+    if (updates.usuarioAsignado) updateData.usuario_asignado = `qas/05-${updates.usuarioAsignado}`;
     if (updates.observaciones) updateData.observaciones = updates.observaciones;
 
     const { data, error } = await supabase

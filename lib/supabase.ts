@@ -16,6 +16,7 @@ export type Database = {
           fecha_incidencia: string;
           atr: string;
           alimentador_normal: string;
+          usuario_asignado: string;
           observaciones: string;
           created_at: string;
         };
@@ -26,6 +27,7 @@ export type Database = {
           fecha_incidencia: string;
           atr: string;
           alimentador_normal: string;
+          usuario_asignado: string;
           observaciones: string;
           created_at?: string;
         };
@@ -36,6 +38,7 @@ export type Database = {
           fecha_incidencia?: string;
           atr?: string;
           alimentador_normal?: string;
+          usuario_asignado?: string;
           observaciones?: string;
           created_at?: string;
         };

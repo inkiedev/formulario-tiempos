@@ -20,6 +20,7 @@ const formSchema = z.object({
   fechaIncidencia: z.string().min(1, "La fecha de incidencia es requerida"),
   atr: z.string().min(1, "El ATR es requerido"),
   alimentadorNormal: z.string().min(1, "El alimentador normal es requerido"),
+  usuarioAsignado: z.string().min(1, "El usuario asignado es requerido").length(10, "El usuario asignado debe tener exactamente 10 caracteres"),
   observaciones: z.string().min(1, "Las observaciones son requeridas"),
 }).refine((data) => {
   if (data.fechaIncidencia && data.atr) {
@@ -47,6 +48,7 @@ export default function IncidentForm() {
       fechaIncidencia: "",
       atr: "",
       alimentadorNormal: "",
+      usuarioAsignado: "",
       observaciones: "",
     },
   });
@@ -62,6 +64,7 @@ export default function IncidentForm() {
         fechaIncidencia: values.fechaIncidencia,
         atr: values.atr,
         alimentadorNormal: values.alimentadorNormal,
+        usuarioAsignado: values.usuarioAsignado,
         observaciones: values.observaciones,
       });
       
@@ -204,6 +207,30 @@ export default function IncidentForm() {
                     placeholder="Ingrese el alimentador normal" 
                     {...field} 
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="usuarioAsignado"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Usuario Asignado</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none">
+                      qas/05-
+                    </div>
+                    <Input 
+                      className="pl-16"
+                      maxLength={10}
+                      placeholder="Ingrese el usuario asignado"
+                      {...field} 
+                    />
+                  </div>
                 </FormControl>
                 <FormMessage />
               </FormItem>

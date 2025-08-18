@@ -45,7 +45,8 @@ export default function IncidentTable() {
     const filtered = data.filter(incident => {
       const matchesSearch = incident.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           incident.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          incident.alimentador_normal.toLowerCase().includes(searchTerm.toLowerCase());
+                          incident.alimentador_normal.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          incident.usuario_asignado.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesType = filterType === "all" || incident.tipo === filterType;
       
@@ -102,7 +103,7 @@ export default function IncidentTable() {
         </div>
         <div className="flex flex-col sm:flex-row gap-4 mt-4">
           <Input
-            placeholder="Buscar por ID, tipo o alimentador..."
+            placeholder="Buscar por ID, tipo, alimentador o usuario..."
             value={searchTerm}
             onChange={(e) => {
               setSearchTerm(e.target.value);
@@ -192,6 +193,12 @@ export default function IncidentTable() {
                     >
                       Alimentador {sortField === "alimentador_normal" && (sortDirection === "asc" ? "↑" : "↓")}
                     </TableHead>
+                    <TableHead
+                      className="cursor-pointer hover:bg-muted/50"
+                      onClick={() => handleSort("usuario_asignado")}
+                    >
+                      Usuario Asignado {sortField === "usuario_asignado" && (sortDirection === "asc" ? "↑" : "↓")}
+                    </TableHead>
                     <TableHead>Observaciones</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -208,6 +215,7 @@ export default function IncidentTable() {
                       <TableCell className="text-sm">{new Date(incident.fecha_incidencia).toLocaleString()}</TableCell>
                       <TableCell className="text-sm">{new Date(incident.atr).toLocaleString()}</TableCell>
                       <TableCell>{incident.alimentador_normal}</TableCell>
+                      <TableCell className="font-mono">{incident.usuario_asignado}</TableCell>
                       <TableCell className="max-w-xs truncate">
                         {incident.observaciones || "-"}
                       </TableCell>

@@ -6,6 +6,7 @@ CREATE TABLE incidentes (
   fecha_incidencia TIMESTAMP WITH TIME ZONE NOT NULL,
   atr TIMESTAMP WITH TIME ZONE NOT NULL,
   alimentador_normal TEXT NOT NULL,
+  usuario_asignado TEXT NOT NULL,
   observaciones TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
