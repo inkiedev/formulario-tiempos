@@ -184,7 +184,7 @@ export default function ExcelProcessorModal() {
     }
 
     // Función para calcular ancho óptimo de columna
-    const calculateColumnWidth = (columnIndex: number, data: any[], headers: string[]) => {
+    const calculateColumnWidth = (columnIndex: number, data: ExcelRow[], headers: string[]) => {
       const header = headers[columnIndex];
       let maxLength = header ? header.length : 0;
       
