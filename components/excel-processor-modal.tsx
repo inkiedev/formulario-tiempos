@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, Download, FileSpreadsheet } from "lucide-react";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import * as ExcelJS from "exceljs";
 import { incidentesService, type IncidenteWithDuration } from "@/lib/services/incidentes";
 
 interface ExcelRow {
@@ -31,17 +32,17 @@ export default function ExcelProcessorModal() {
       const currentYear = currentDate.getFullYear();
       
       return incidents.filter(incident => {
-        const incidentDate = new Date(incident.fecha_incidencia);
-        return incidentDate.getMonth() === currentMonth && 
-               incidentDate.getFullYear() === currentYear;
+        const atrDate = new Date(incident.atr);
+        return atrDate.getMonth() === currentMonth && 
+               atrDate.getFullYear() === currentYear;
       });
     }
 
     const [year, month] = monthYear.split('-').map(Number);
     return incidents.filter(incident => {
-      const incidentDate = new Date(incident.fecha_incidencia);
-      return incidentDate.getMonth() === (month - 1) && 
-             incidentDate.getFullYear() === year;
+      const atrDate = new Date(incident.atr);
+      return atrDate.getMonth() === (month - 1) && 
+             atrDate.getFullYear() === year;
     });
   };
 
@@ -112,7 +113,7 @@ export default function ExcelProcessorModal() {
         
         if (matchedIncident) {
           matchesFound++;
-          newRow['Duracion Calculada'] = `${matchedIncident.duracion} min`;
+          newRow['Duración de incidencia (calculada)'] = `${matchedIncident.duracion} min`;
           newRow['Observaciones'] = matchedIncident.observaciones;
         }
         
@@ -130,52 +131,84 @@ export default function ExcelProcessorModal() {
     }
   };
 
-  const downloadProcessedFile = () => {
+  const downloadProcessedFile = async () => {
     if (!processedData) return;
 
-    // Obtener todas las columnas originales del primer row
+    // Crear nuevo workbook con ExcelJS
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Incidentes Procesados');
+
+    // Obtener todas las columnas del primer row
     const firstRow = processedData[0];
     if (!firstRow) return;
     
-    const originalColumns = Object.keys(firstRow).filter(key => key !== 'Duracion Calculada' && key !== 'Observaciones');
-    const finalColumns = [...originalColumns, 'Duracion Calculada', 'Observaciones'];
+    const originalColumns = Object.keys(firstRow).filter(key => key !== 'Duración de incidencia (calculada)' && key !== 'Observaciones');
+    const finalColumns = [...originalColumns, 'Duración de incidencia (calculada)', 'Observaciones'];
     
-    // Reorganizar datos con orden de columnas específico
-    const reorderedData = processedData.map(row => {
-      const orderedRow: ExcelRow = {};
+    // Filtrar columnas que realmente tienen datos
+    const columnsWithData = finalColumns.filter(col => 
+      processedData.some(row => row[col] !== undefined)
+    );
+
+    // Agregar encabezados
+    worksheet.addRow(columnsWithData);
+    
+    // Agregar datos
+    processedData.forEach(row => {
+      const rowData = columnsWithData.map(col => row[col] || '');
+      worksheet.addRow(rowData);
+    });
+
+    // Encontrar el índice de la columna "Duración de incidencia (calculada)"
+    const duracionColIndex = columnsWithData.findIndex(col => col === 'Duración de incidencia (calculada)');
+    
+    if (duracionColIndex >= 0) {
+      const columnLetter = String.fromCharCode(65 + duracionColIndex); // A=65, B=66, etc.
       
-      // Primero todas las columnas originales
-      originalColumns.forEach(col => {
-        if (row[col] !== undefined) {
-          orderedRow[col] = row[col];
-        }
+      // Aplicar formato rojo a toda la columna
+      const column = worksheet.getColumn(duracionColIndex + 1);
+      column.eachCell((cell) => {
+        cell.font = {
+          color: { argb: 'FFDC2626' }, // Rojo
+          bold: true
+        };
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFFEE2E2' } // Fondo rojo claro
+        };
+        cell.alignment = {
+          horizontal: 'center'
+        };
+      });
+    }
+
+    // Función para calcular ancho óptimo de columna
+    const calculateColumnWidth = (columnIndex: number, data: any[], headers: string[]) => {
+      const header = headers[columnIndex];
+      let maxLength = header ? header.length : 0;
+      
+      // Revisar cada fila para encontrar el contenido más largo
+      data.forEach(row => {
+        const cellValue = String(row[header] || '');
+        maxLength = Math.max(maxLength, cellValue.length);
       });
       
-      // Luego las nuevas columnas al final (solo si existen)
-      if (row['Duracion Calculada'] !== undefined) {
-        orderedRow['Duracion Calculada'] = row['Duracion Calculada'];
-      }
-      if (row['Observaciones'] !== undefined) {
-        orderedRow['Observaciones'] = row['Observaciones'];
-      }
-      
-      return orderedRow;
-    });
+      // Aplicar fórmula para convertir caracteres a ancho de Excel
+      // Añadir padding y establecer límites razonables
+      const calculatedWidth = Math.max(8, Math.min(50, maxLength * 1.2 + 2));
+      return calculatedWidth;
+    };
 
-    // Crear nuevo workbook con orden específico de columnas
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.json_to_sheet(reorderedData, { 
-      header: finalColumns.filter(col => 
-        reorderedData.some(row => row[col] !== undefined)
-      )
+    // Ajustar ancho de columnas automáticamente
+    columnsWithData.forEach((columnName, index) => {
+      const optimalWidth = calculateColumnWidth(index, processedData, columnsWithData);
+      worksheet.getColumn(index + 1).width = optimalWidth;
     });
-
-    // Agregar hoja al workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Incidentes Procesados");
 
     // Generar archivo
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
     
     // Generar nombre del archivo con fecha
     const currentDate = new Date();
@@ -254,7 +287,7 @@ export default function ExcelProcessorModal() {
         
         <div className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            Sube un archivo Excel con columnas de incidentes. Se agregarán las columnas &#34;Duracion Calculada&#34; y
+            Sube un archivo Excel con columnas de incidentes. Se agregarán las columnas &#34;Duración de incidencia (calculada)&#34; y
             &#34;Observaciones&#34; basadas en los incidentes del mes seleccionado.
           </div>
 

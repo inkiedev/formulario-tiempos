@@ -173,7 +173,7 @@ export default function IncidentTable() {
                       className="cursor-pointer hover:bg-muted/50"
                       onClick={() => handleSort("duracion")}
                     >
-                      Duración {sortField === "duracion" && (sortDirection === "asc" ? "↑" : "↓")}
+                      Duración de incidencia (calculada) {sortField === "duracion" && (sortDirection === "asc" ? "↑" : "↓")}
                     </TableHead>
                     <TableHead
                       className="cursor-pointer hover:bg-muted/50"
